@@ -14,6 +14,7 @@
     "shopify"
   ],
   "author": "Alex Borodin <alex.borodin@vtlabs.org>",
+  "url": "https://github.com/alex-borodin-vtlabs/gatsby-source-shopify-translated",
   "license": "MIT",
   "peerDependencies": {
     "gatsby": "^2.0.0"

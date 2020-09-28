@@ -133,9 +133,7 @@ query GetLocalizedProducts($locale: String) {
       }
     }
   }
-},
-{ locale: "en" }
-)
+}
 ```
 
 All Shopify data is pulled using the [Shopify Storefront
@@ -477,8 +475,8 @@ exports.createPages = async ({ graphql, boundActionCreators }) => {
   const { createPage } = boundActionCreators
 
   const pages = await graphql(`
-    {
-      allShopifyProduct {
+    query GetLocalizedProducts($locale: String) {
+      allShopifyProduct(filter: {locale: {eq: $locale}})  {
         edges {
           node {
             id
@@ -487,7 +485,9 @@ exports.createPages = async ({ graphql, boundActionCreators }) => {
         }
       }
     }
-  `)
+  `,
+  {  locale: "en" }
+  )
 
   pages.data.allShopifyProduct.edges.forEach(edge => {
     createPage({

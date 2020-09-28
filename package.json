@@ -1,16 +1,39 @@
 {
-  "name": "gatsby-starter-plugin",
+  "name": "gatsby-source-shopify-translated",
   "version": "1.0.0",
-  "description": "A minimal boilerplate for the essential files Gatsby looks for in a plugin",
+  "description": "Shopify source plugin update to support translations API",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo \"No build script setup\""
+    "build": "babel src --out-dir . --ignore \"**/__tests__\"",
+    "prepare": "cross-env NODE_ENV=production npm run build",
+    "watch": "npm run build -- --watch"
   },
   "keywords": [
     "gatsby",
-    "gatsby-plugin"
+    "gatsby-plugin",
+    "shopify"
   ],
-  "author": "Kyle Gill <kyle.robert.gill@gmail.com>",
-  "license": "0BSD"
+  "author": "Alex Borodin <alex.borodin@vtlabs.org>",
+  "license": "MIT",
+  "peerDependencies": {
+    "gatsby": "^2.0.0"
+  },
+  "dependencies": {
+    "gatsby-source-shopify": "^3.2.32",
+    "babel-preset-gatsby-package": "^0.5.3",
+    "gatsby-node-helpers": "^0.3.0",
+    "gatsby-source-filesystem": "^2.3.30",
+    "lodash": "^4.17.20",
+    "p-iteration": "^1.1.8",
+    "graphql-request": "^1.8.2",
+    "chalk": "^2.4.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.11.6",
+    "@babel/core": "^7.11.6",
+    "cross-env": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=10.13.0"
+  }
 }

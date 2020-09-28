@@ -1,113 +1,808 @@
-<p align="center">
-  <a href="https://www.gatsbyjs.com">
-    <img alt="Gatsby" src="https://www.gatsbyjs.com/Gatsby-Monogram.svg" width="60" />
-  </a>
-</p>
-<h1 align="center">
-  Starter for a Gatsby Plugin
-</h1>
+# gatsby-source-shopify-translated
 
-A minimal boilerplate for the essential files Gatsby looks for in a plugin.
+Source plugin for pulling data into [Gatsby][gatsby] from [Shopify][shopify]
+stores via the [Shopify Storefront API][shopify-storefront-api] and supports Translation API.
 
-## 🚀 Quick start
+## Features
 
-To get started creating a new plugin, you can follow these steps:
+- Provides public shop data available via the [Shopify Storefront API][shopify-storefront-api]
+- Supports `gatsby-transformer-sharp` and `gatsby-image` for product and
+  article images
 
-1. Initialize a new plugin from the starter with `gatsby new`
+## Install
 
 ```shell
-gatsby new my-plugin https://github.com/gatsbyjs/gatsby-starter-plugin
+npm install --save gatsby-source-shopify-translated
 ```
 
-If you already have a Gatsby site, you can use it. Otherwise, you can [create a new Gatsby site](https://www.gatsbyjs.com/tutorial/part-zero/#create-a-gatsby-site) to test your plugin.
+## How to use
 
-Your directory structure will look similar to this:
+Ensure you have an access token for the [Shopify Storefront API][shopify-storefront-api]. The token should have the following permissions:
 
-```text
-/my-gatsby-site
-├── gatsby-config.js
-└── /src
-    └── /pages
-        └── /index.js
-/my-plugin
-├── gatsby-browser.js
-├── gatsby-node.js
-├── gatsby-ssr.js
-├── index.js
-├── package.json
-└── README.md
+- Read products, variants, and collections
+- Read product tags
+- Read content like articles, blogs, and comments
+
+Then in your `gatsby-config.js` add the following config to enable this plugin:
+
+```js
+plugins: [
+  /*
+   * Gatsby's data processing layer begins with “source”
+   * plugins. Here the site sources its data from Shopify.
+   */
+  {
+    resolve: "gatsby-source-shopify",
+    options: {
+      // The domain name of your Shopify shop. This is required.
+      // Example: 'gatsby-source-shopify-test-shop' if your Shopify address is
+      // 'gatsby-source-shopify-test-shop.myshopify.com'.
+      // If you are running your shop on a custom domain, you need to use that
+      // as the shop name, without a trailing slash, for example:
+      // shopName: "gatsby-shop.com",
+      shopName: "gatsby-source-shopify-test-shop",
+
+      // An API access token to your Shopify shop. This is required.
+      // You can generate an access token in the "Manage private apps" section
+      // of your shop's Apps settings. In the Storefront API section, be sure
+      // to select "Allow this app to access your storefront data using the
+      // Storefront API".
+      // See: https://help.shopify.com/api/custom-storefronts/storefront-api/getting-started#authentication
+      accessToken: "example-wou7evoh0eexuf6chooz2jai2qui9pae4tieph1sei4deiboj",
+
+      // Set the API version you want to use. For a list of available API versions,
+      // see: https://help.shopify.com/en/api/storefront-api/reference/queryroot
+      // Defaults to 2019-07
+      apiVersion: "2020-01",
+
+      // Set verbose to true to display a verbose output on `npm run develop`
+      // or `npm run build`. This prints which nodes are being fetched and how
+      // much time was required to fetch and process the data.
+      // Defaults to true.
+      verbose: true,
+
+      // Number of records to fetch on each request when building the cache
+      // at startup. If your application encounters timeout errors during
+      // startup, try decreasing this number.
+      paginationSize: 250,
+
+      // List of collections you want to fetch.
+      // Possible values are: 'shop' and 'content'.
+      // Defaults to ['shop', 'content'].
+      includeCollections: ["shop", "content"],
+
+      // Allow overriding the default queries
+      // This allows you to include/exclude extra fields when sourcing nodes
+      // Available keys are: articles, blogs, collections, products, shopPolicies, and pages
+      // Queries need to accept arguments for first and after
+      // You will need to include all the fields you want available for a
+      // specific key. View the `shopifyQueries Defaults` section below for a
+      // full list of keys and fields.
+      shopifyQueries: {
+        products: `
+          query GetProducts($first: Int!, $after: String) {
+            products(first: $first, after: $after) {
+              pageInfo {
+                hasNextPage
+              }
+              edges {
+                cursor
+                node {
+                  availableForSale
+                }
+              }
+            }
+          }
+        `,
+      },
+
+      // List of langualges you want to fetch.
+      // Defaults to ['en'].
+      languages: ['en', 'de']
+    },
+  },
+]
 ```
 
-With `my-gatsby-site` being your Gatsby site, and `my-plugin` being your plugin. You could also include the plugin in your [site's `plugins` folder](https://www.gatsbyjs.com/docs/loading-plugins-from-your-local-plugins-folder/).
+NOTE: By default, all metafields are private. In order to pull metafields,
+you must first [expose the metafield to the Storefront API](https://help.shopify.com/en/api/guides/metafields/storefront-api-metafields#expose-metafields-to-the-storefront-api).
 
-2. Include the plugin in a Gatsby site
+## How to query
 
-Inside of the `gatsby-config.js` file of your site (in this case, `my-gatsby-site`), include the plugin in the `plugins` array:
+You can query nodes created from Shopify using GraphQL like the following:
 
-```javascript
-module.exports = {
-  plugins: [
-    // other gatsby plugins
-    // ...
-    require.resolve(`../my-plugin`),
-  ],
+**Note**: Learn to use the GraphQL tool and Ctrl+Spacebar at
+`http://localhost:8000/___graphql` to discover the types and properties of your
+GraphQL model.
+
+```graphql
+query GetLocalizedProducts($locale: String) {
+  allShopifyProduct(filter: {locale: {eq: $locale}})  {
+    edges {
+      node {
+        id
+        title
+        handle
+        productType
+        vendor
+        variants {
+          id
+          title
+          price
+        }
+      }
+    }
+  }
+},
+{ locale: "en" }
+)
+```
+
+All Shopify data is pulled using the [Shopify Storefront
+API][shopify-storefront-api]. Data is made available in the same structure as
+provided by the API, with a few exceptions noted below.
+
+The following data types are available:
+
+| Name               | Description                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| **Article**        | A blog entry.                                                                                                         |
+| **Blog**           | Collection of articles.                                                                                               |
+| **Comment**        | A comment on a blog entry.                                                                                            |
+| **Collection**     | Represents a grouping of products that a shop owner can create to organize them or make their shops easier to browse. |
+| **Product**        | Represents an individual item for sale in a Shopify store.                                                            |
+| **ProductOption**  | Custom product property names.                                                                                        |
+| **ProductVariant** | Represents a different version of a product, such as differing sizes or differing colors.                             |
+| **ShopPolicy**     | Policy that a merchant has configured for their store, such as their refund or privacy policy.                        |
+| **ShopDetails**    | Name, description and money format that a merchant has configured for their store.                                    |
+
+For each data type listed above, `shopify${typeName}` and
+`allShopify${typeName}` is made available. Nodes that are closely related, such
+as `Article` and `Comment`, are provided as node fields as described below.
+
+**Note**: The following examples are not a complete reference to the available
+fields for each node. Utilize Gatsby's built-in GraphQL tool to discover the
+types and properties available.
+
+### Query articles
+
+The associated blog data is provided on the `blog` field. Article comments are
+provided on the `comments` field.
+
+```graphql
+{
+  allShopifyArticle {
+    edges {
+      node {
+        id
+        author {
+          email
+          name
+        }
+        blog {
+          title
+        }
+        comments {
+          id
+          author {
+            email
+            name
+          }
+          contentHtml
+        }
+        contentHtml
+        publishedAt(formatString: "ddd, MMMM Do, YYYY")
+      }
+    }
+  }
 }
 ```
 
-The line `require.resolve('../my-plugin')` is what accesses the plugin based on its filepath on your computer, and adds it as a plugin when Gatsby runs.
+### Query blogs
 
-_You can use this method to test and develop your plugin before you publish it to a package registry like npm. Once published, you would instead install it and [add the plugin name to the array](https://www.gatsbyjs.com/docs/using-a-plugin-in-your-site/). You can read about other ways to connect your plugin to your site including using `npm link` or `yarn workspaces` in the [doc on creating local plugins](https://www.gatsbyjs.com/docs/creating-a-local-plugin/#developing-a-local-plugin-that-is-outside-your-project)._
+Blog data is provided on the `blog` field on `Article`, but it can be queried
+directly like the following:
 
-3. Verify the plugin was added correctly
-
-The plugin added by the starter implements a single Gatsby API in the `gatsby-node` that logs a message to the console. When you run `gatsby develop` or `gatsby build` in the site that implements your plugin, you should see this message.
-
-You can verify your plugin was added to your site correctly by running `gatsby develop` for the site.
-
-You should now see a message logged to the console in the preinit phase of the Gatsby build process:
-
-```shell
-$ gatsby develop
-success open and validate gatsby-configs - 0.033s
-success load plugins - 0.074s
-Loaded gatsby-starter-plugin
-success onPreInit - 0.016s
-...
+```graphql
+{
+  allShopifyBlog {
+    edges {
+      node {
+        id
+        title
+        url
+      }
+    }
+  }
+}
 ```
 
-4. Rename the plugin in the `package.json`
+### Query article comments
 
-When you clone the site, the information in the `package.json` will need to be updated. Name your plugin based off of [Gatsby's conventions for naming plugins](https://www.gatsbyjs.com/docs/naming-a-plugin/).
+Comments are provided on the `comments` field on `Article`, but they can be
+queried directly like the following:
 
-## 🧐 What's inside?
-
-This starter generates the [files Gatsby looks for in plugins](https://www.gatsbyjs.com/docs/files-gatsby-looks-for-in-a-plugin/).
-
-```text
-/my-plugin
-├── .gitignore
-├── gatsby-browser.js
-├── gatsby-node.js
-├── gatsby-ssr.js
-├── index.js
-├── LICENSE
-├── package.json
-└── README.md
+```graphql
+{
+  allShopifyComment {
+    edges {
+      node {
+        id
+        author {
+          email
+          name
+        }
+        contentHtml
+      }
+    }
+  }
+}
 ```
 
-- **`.gitignore`**: This file tells git which files it should not track / not maintain a version history for.
-- **`gatsby-browser.js`**: This file is where Gatsby expects to find any usage of the [Gatsby browser APIs](https://www.gatsbyjs.com/docs/browser-apis/) (if any). These allow customization/extension of default Gatsby settings affecting the browser.
-- **`gatsby-node.js`**: This file is where Gatsby expects to find any usage of the [Gatsby Node APIs](https://www.gatsbyjs.com/docs/node-apis/) (if any). These allow customization/extension of default Gatsby settings affecting pieces of the site build process.
-- **`gatsby-ssr.js`**: This file is where Gatsby expects to find any usage of the [Gatsby server-side rendering APIs](https://www.gatsbyjs.com/docs/ssr-apis/) (if any). These allow customization of default Gatsby settings affecting server-side rendering.
-- **`index.js`**: A file that will be loaded by default when the plugin is [required by another application](https://docs.npmjs.com/creating-node-js-modules#create-the-file-that-will-be-loaded-when-your-module-is-required-by-another-application0). You can adjust what file is used by updating the `main` field of the `package.json`.
-- **`LICENSE`**: This plugin starter is licensed under the 0BSD license. This means that you can see this file as a placeholder and replace it with your own license.
-- **`package.json`**: A manifest file for Node.js projects, which includes things like metadata (the plugin's name, author, etc). This manifest is how npm knows which packages to install for your project.
-- **`README.md`**: A text file containing useful reference information about your plugin.
+### Query product collections
 
-## 🎓 Learning Gatsby
+Products in the collection are provided on the `products` field.
 
-If you're looking for more guidance on plugins, how they work, or what their role is in the Gatsby ecosystem, check out some of these resources:
+```graphql
+{
+  allShopifyCollection {
+    edges {
+      node {
+        id
+        descriptionHtml
+        handle
+        image {
+          src
+          alt
+        }
+        products {
+          id
+          handle
+          title
+        }
+        title
+      }
+    }
+  }
+}
+```
 
-- The [Creating Plugins](https://www.gatsbyjs.com/docs/creating-plugins/) section of the docs has information on authoring and maintaining plugins yourself.
-- The conceptual guide on [Plugins, Themes, and Starters](https://www.gatsbyjs.com/docs/plugins-themes-and-starters/) compares and contrasts plugins with other pieces of the Gatsby ecosystem. It can also help you [decide what to choose between a plugin, starter, or theme](https://www.gatsbyjs.com/docs/plugins-themes-and-starters/#deciding-which-to-use).
-- The [Gatsby plugin library](https://www.gatsbyjs.com/plugins/) has over 1750 official as well as community developed plugins that can get you up and running faster and borrow ideas from.
+### Query products
+
+Product variants and options are provided on the `variants` and `options`
+fields.
+
+```graphql
+{
+  allShopifyProduct {
+    edges {
+      node {
+        id
+        descriptionHtml
+        handle
+        images {
+          originalSrc
+        }
+        variants {
+          id
+          availableForSale
+          image {
+            originalSrc
+          }
+          price
+          selectedOptions {
+            name
+            value
+          }
+          sku
+          title
+        }
+        title
+      }
+    }
+  }
+}
+```
+
+### Query product options
+
+Product options are provided on the `options` field on `Product`, but they can
+be queried directly like the following:
+
+```graphql
+{
+  allShopifyProductOption {
+    edges {
+      node {
+        id
+        name
+        values
+      }
+    }
+  }
+}
+```
+
+### Query product variants
+
+Product variants are provided on the `variants` field on `Product`, but they
+can be queried directly like the following:
+
+```graphql
+{
+  allShopifyProductVariant {
+    edges {
+      node {
+        id
+        availableForSale
+        image {
+          originalSrc
+        }
+        price
+        selectedOptions {
+          name
+          value
+        }
+        sku
+        title
+      }
+    }
+  }
+}
+```
+
+### Query shop policies
+
+Shop policies include the following types:
+
+- Privacy Policy (`privacyPolicy`)
+- Refund Policy (`refundPolicy`)
+- Terms of Service (`termsOfService`)
+
+The type of policy is provided on the `type` field. Policies can be queried
+like the following:
+
+```graphql
+{
+  allShopifyShopPolicy {
+    edges {
+      node {
+        body
+        title
+        type
+      }
+    }
+  }
+}
+```
+
+### Query pages
+
+Shopify merchants can create pages to hold static HTML content.
+
+```graphql
+{
+  allShopifyPage {
+    edges {
+      node {
+        id
+        handle
+        title
+        body
+        bodySummary
+      }
+    }
+  }
+}
+```
+
+### Query shop details
+
+Shopify merchants can give their shop a name, description and a money format.
+
+```graphql
+{
+  shopifyShop {
+    name
+    description
+    moneyFormat
+  }
+}
+```
+
+### Image processing
+
+To use image processing you need `gatsby-transformer-sharp`,
+`gatsby-plugin-sharp`, and their dependencies `gatsby-image` and
+`gatsby-source-filesystem` in your `gatsby-config.js`.
+
+You can apply image processing to any image field on a node. Image processing
+of inline images added to description fields is currently not supported.
+
+To access image processing in your queries, you need to use this pattern, where
+`...ImageFragment` is one of the [`gatsby-transformer-sharp`
+fragments][gatsby-image-fragments]:
+
+```graphql
+{
+  allShopifyProduct {
+    edges {
+      node {
+        id
+        images {
+          localFile {
+            childImageSharp {
+              ...ImageFragment
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Full example:
+
+```graphql
+{
+  allShopifyProduct {
+    edges {
+      node {
+        id
+        images {
+          localFile {
+            childImageSharp {
+              resolutions(width: 500, height: 300) {
+                ...GatsbyImageSharpResolutions_withWebp
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+To learn more about image processing, check the documentation of
+[gatsby-plugin-sharp][gatsby-plugin-sharp].
+
+## Site's `gatsby-node.js` example
+
+```js
+const path = require("path")
+
+exports.createPages = async ({ graphql, boundActionCreators }) => {
+  const { createPage } = boundActionCreators
+
+  const pages = await graphql(`
+    {
+      allShopifyProduct {
+        edges {
+          node {
+            id
+            handle
+          }
+        }
+      }
+    }
+  `)
+
+  pages.data.allShopifyProduct.edges.forEach(edge => {
+    createPage({
+      path: `/${edge.node.handle}`,
+      component: path.resolve("./src/templates/product.js"),
+      context: {
+        id: edge.node.id,
+      },
+    })
+  })
+}
+```
+
+## shopifyQueries Defaults
+
+The following can be used in gatsby-config.js to override the default queries.
+
+```js
+shopifyQueries: {
+  articles: `
+    query GetArticles($first: Int!, $after: String) {
+      articles(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+        }
+        edges {
+          cursor
+          node {
+            author {
+              bio
+              email
+              firstName
+              lastName
+              name
+            }
+            blog {
+              id
+            }
+            comments(first: 250) {
+              edges {
+                node {
+                  author {
+                    email
+                    name
+                  }
+                  content
+                  contentHtml
+                  id
+                }
+              }
+            }
+            content
+            contentHtml
+            excerpt
+            excerptHtml
+            id
+            handle
+            image {
+              altText
+              id
+              src
+            }
+            publishedAt
+            tags
+            title
+            url
+            seo {
+              title
+              description
+            }
+          }
+        }
+      }
+    }
+  `,
+  blogs: `
+    query GetBlogs($first: Int!, $after: String) {
+      blogs(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+        }
+        edges {
+          cursor
+          node {
+            id
+            handle
+            title
+            url
+          }
+        }
+      }
+    }
+  `,
+  collections: `
+    query GetCollections($first: Int!, $after: String) {
+      collections(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+        }
+        edges {
+          cursor
+          node {
+            description
+            descriptionHtml
+            handle
+            id
+            image {
+              altText
+              id
+              src
+            }
+            products(first: 250) {
+              edges {
+                node {
+                  id
+                }
+              }
+            }
+            title
+            updatedAt
+          }
+        }
+      }
+    }
+  `,
+  products: `
+    query GetProducts($first: Int!, $after: String) {
+      products(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+        }
+        edges {
+          cursor
+          node {
+            availableForSale
+            createdAt
+            description
+            descriptionHtml
+            handle
+            id
+            images(first: 250) {
+              edges {
+                node {
+                  id
+                  altText
+                  originalSrc
+                }
+              }
+            }
+            metafields(first: 250) {
+              edges {
+                node {
+                  description
+                  id
+                  key
+                  namespace
+                  value
+                  valueType
+                }
+              }
+            }
+            onlineStoreUrl
+            options {
+              id
+              name
+              values
+            }
+            priceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+              maxVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            productType
+            publishedAt
+            tags
+            title
+            updatedAt
+            variants(first: 250) {
+              edges {
+                node {
+                  availableForSale
+                  compareAtPrice
+                  compareAtPriceV2 {
+                    amount
+                    currencyCode
+                  }
+                  id
+                  image {
+                    altText
+                    id
+                    originalSrc
+                  }
+                  metafields(first: 250) {
+                    edges {
+                      node {
+                        description
+                        id
+                        key
+                        namespace
+                        value
+                        valueType
+                      }
+                    }
+                  }
+                  price
+                  priceV2 {
+                    amount
+                    currencyCode
+                  }
+                  requiresShipping
+                  selectedOptions {
+                    name
+                    value
+                  }
+                  sku
+                  title
+                  weight
+                  weightUnit
+                  presentmentPrices(first: 250) {
+                    edges {
+                      node {
+                        price {
+                          amount
+                          currencyCode
+                        }
+                        compareAtPrice {
+                          amount
+                          currencyCode
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            vendor
+          }
+        }
+      }
+    }
+  `,
+  shopPolicies: `
+    query GetPolicies {
+      shop {
+        privacyPolicy {
+          body
+          id
+          title
+          url
+        }
+        refundPolicy {
+          body
+          id
+          title
+          url
+        }
+        termsOfService {
+          body
+          id
+          title
+          url
+        }
+      }
+    }
+  `,
+  pages: `
+    query GetPages($first: Int!, $after: String) {
+      pages(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+        }
+        edges {
+          cursor
+          node {
+            id
+            handle
+            title
+            body
+            bodySummary
+            updatedAt
+            url
+          }
+        }
+      }
+    }
+  `,
+},
+```
+
+## A note on customer information
+
+Not all Shopify nodes have been implemented as they are not necessary for the
+static portion of a Gatsby-generated website. This includes any node that
+contains sensitive customer-specific information, such as `Order` and
+`Payment`.
+
+If you are in need of this data (e.g. building a private, internal website),
+please open an issue. Until then, the nodes will not be implemented to lessen
+the chances of someone accidentally making private information publicly
+available.
+
+[gatsby]: https://www.gatsbyjs.org/
+[shopify]: https://www.shopify.com/
+[shopify-storefront-api]: https://help.shopify.com/api/custom-storefronts/storefront-api
+[graphql-inline-fragments]: https://graphql.org/learn/queries/#inline-fragments
+[gatsby-plugin-sharp]: https://github.com/gatsbyjs/gatsby/blob/master/packages/gatsby-plugin-sharp
+[gatsby-image-fragments]: https://github.com/gatsbyjs/gatsby/blob/master/packages/gatsby-image#gatsby-transformer-sharp
+
+## License
+
+MIT
+
+Copyright (c) 2020 [VT Labs](https://www.vtlabs.org)

@@ -3,7 +3,7 @@
 exports.__esModule = true;
 exports.createClient = void 0;
 
-var _graphqlRequest = require("graphql-request"); 
+var _graphqlRequest = require("graphql-request");
 
 /**
  * Create a Shopify Storefront GraphQL client for the provided name and token.

@@ -135,7 +135,6 @@ const createNodes = async (endpoint, query, nodeFactory, {
   if (verbose) console.time(msg);
   await (0, _pIteration.forEach)(languages, async (locale) => await (0, _pIteration.forEach)(await (0, _lib.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
     const node = await nodeFactory(imageArgs)(mapEntityIds(entity, locale));
-    console.log(nodeFactory);
     createNode(node);
     await f(entity, node);
   }));
@@ -213,25 +212,17 @@ const createPageNodes = async (endpoint, query, nodeFactory, {
   if (verbose) console.timeEnd(msg);
 };
 
-const nodeWithLocale = (node, locale) => {
-  console.log(locale);
-  console.log(node.id);
-  return { ...node,
-    id: `${locale}__${node.id}`,
-    locale
-  };
-};
+const nodeWithLocale = (node, locale) => ({ ...node,
+  id: `${locale}__${node.id}`,
+  locale
+});
 
 const mapEntityIds = (node, locale) => {
-  console.log("map products");
-
   if (node.products) {
     node.products.edges.forEach(edge => {
       edge.node = nodeWithLocale(edge.node, locale);
     });
   }
-
-  console.log("map variants");
 
   if (node.variants) {
     node.variants.edges.forEach(edge => {
@@ -239,21 +230,15 @@ const mapEntityIds = (node, locale) => {
     });
   }
 
-  console.log("map metafields");
-
   if (node.metafields) {
     node.metafields.edges.forEach(edge => {
       edge.node = nodeWithLocale(edge.node, locale);
     });
   }
 
-  console.log("map options");
-
   if (node.options) {
     node.options = node.options.map(option => nodeWithLocale(option, locale));
   }
-
-  console.log("map comments");
 
   if (node.comments) {
     node.comments.forEach(edge => {
@@ -261,21 +246,15 @@ const mapEntityIds = (node, locale) => {
     });
   }
 
-  console.log("map image");
-
   if (node.image) {
     node.image = nodeWithLocale(node.image, locale);
   }
 
-  console.log("map images");
-
   if (node.images && node.images.edges) {
     node.images.edges.forEach(edge => {
-      console.log(edge);
       edge.node = nodeWithLocale(edge.node, locale);
     });
   }
 
-  console.log("finishmapping");
   return nodeWithLocale(node, locale);
 };

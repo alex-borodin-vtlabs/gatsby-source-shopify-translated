@@ -15,6 +15,8 @@ var _lib = require("gatsby-source-shopify/lib");
 
 var _createClient = require("./create-client");
 
+var _lib2 = require("./lib");
+
 var _nodes = require("gatsby-source-shopify/nodes");
 
 var _constants = require("gatsby-source-shopify/constants");
@@ -133,7 +135,7 @@ const createNodes = async (endpoint, query, nodeFactory, {
   // Message printed when fetching is complete.
   const msg = formatMsg(`fetched and processed ${endpoint} nodes`);
   if (verbose) console.time(msg);
-  await (0, _pIteration.forEach)(languages, async (locale) => await (0, _pIteration.forEach)(await (0, _lib.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
+  await (0, _pIteration.forEach)(languages, async (locale) => await (0, _pIteration.forEach)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
     const node = await nodeFactory(imageArgs)(mapEntityIds(entity, locale));
     createNode(node);
     await f(entity, node);
@@ -203,7 +205,7 @@ const createPageNodes = async (endpoint, query, nodeFactory, {
   const msg = formatMsg(`fetched and processed ${endpoint} nodes`);
   if (verbose) console.time(msg);
   await (0, _pIteration.forEach)(languages, async locale => {
-    await (0, _pIteration.forEach)(await (0, _lib.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
+    await (0, _pIteration.forEach)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
       const node = await nodeFactory(entity);
       createNode(nodeWithLocale(node, locale));
       await f(entity);

@@ -1,8 +1,9 @@
 import { pipe } from "lodash/fp"
 import chalk from "chalk"
 import { forEach } from "p-iteration"
-import { printGraphQLError, queryAll, queryOnce } from "gatsby-source-shopify/lib"
+import { printGraphQLError, queryOnce } from "gatsby-source-shopify/lib"
 import { createClient } from "./create-client"
+import { queryAll } from "./lib"
 
 import {
   ArticleNode,

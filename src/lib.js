@@ -24,7 +24,7 @@ export const queryAll = async (
       : nodes
   
     if (get([...path, `pageInfo`, `hasNextPage`], data)) {
-      await timeout(250)
+      await timeout(1000)
       return queryAll(
         client,
         path,

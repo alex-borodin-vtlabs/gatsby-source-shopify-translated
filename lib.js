@@ -18,7 +18,7 @@ const queryAll = async (client, path, query, first = 250, after = null, aggregat
   aggregatedResponse = aggregatedResponse ? aggregatedResponse.concat(nodes) : nodes;
 
   if ((0, _fp.get)([...path, `pageInfo`, `hasNextPage`], data)) {
-    await timeout(250);
+    await timeout(2000);
     return queryAll(client, path, query, first, (0, _fp.last)(edges).cursor, aggregatedResponse);
   }
 

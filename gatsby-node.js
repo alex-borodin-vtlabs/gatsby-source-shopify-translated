@@ -241,7 +241,7 @@ const mapEntityIds = (node, locale) => {
   }
 
   if (node.comments) {
-    node.comments.forEach(edge => {
+    node.comments.edges.forEach(edge => {
       edge.node = nodeWithLocale(edge.node, locale);
     });
   }

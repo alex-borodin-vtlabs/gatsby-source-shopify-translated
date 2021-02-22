@@ -11,6 +11,7 @@ export const queryAll = async (
     client,
     path,
     query,
+    delay = 500,
     first = 250,
     after = null,
     aggregatedResponse = null
@@ -24,11 +25,12 @@ export const queryAll = async (
       : nodes
   
     if (get([...path, `pageInfo`, `hasNextPage`], data)) {
-      await timeout(2000)
-      return queryAll(
+      await timeout(delay)
+      return await queryAll(
         client,
         path,
         query,
+        delay,
         first,
         last(edges).cursor,
         aggregatedResponse

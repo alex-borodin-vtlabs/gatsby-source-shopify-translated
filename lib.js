@@ -11,15 +11,15 @@ const timeout = ms => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-const queryAll = async (client, path, query, first = 250, after = null, aggregatedResponse = null) => {
+const queryAll = async (client, path, query, delay = 500, first = 250, after = null, aggregatedResponse = null) => {
   const data = await (0, _lib.queryOnce)(client, query, first, after);
   const edges = (0, _fp.getOr)([], [...path, `edges`], data);
   const nodes = edges.map(edge => edge.node);
   aggregatedResponse = aggregatedResponse ? aggregatedResponse.concat(nodes) : nodes;
 
   if ((0, _fp.get)([...path, `pageInfo`, `hasNextPage`], data)) {
-    await timeout(2000);
-    return queryAll(client, path, query, first, (0, _fp.last)(edges).cursor, aggregatedResponse);
+    await timeout(delay);
+    return await queryAll(client, path, query, delay, first, (0, _fp.last)(edges).cursor, aggregatedResponse);
   }
 
   return aggregatedResponse;

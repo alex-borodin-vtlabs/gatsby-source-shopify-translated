@@ -39,6 +39,7 @@ const sourceNodes = async ({
   apiVersion = `2020-07`,
   verbose = true,
   paginationSize = 250,
+  paginationDelay = 500,
   languages = ['en'],
   includeCollections = [_constants.SHOP, _constants.CONTENT],
   shopifyQueries = {}
@@ -81,6 +82,7 @@ const sourceNodes = async ({
       verbose,
       imageArgs,
       paginationSize,
+      paginationDelay,
       queries,
       languages
     }; // Message printed when fetching is complete.
@@ -107,7 +109,11 @@ const sourceNodes = async ({
     }
 
     console.time(msg);
-    await Promise.all(promises);
+
+    for (const promise of promises) {
+      await promise;
+    }
+
     console.timeEnd(msg);
   } catch (e) {
     console.error((0, _chalk.default)`\n{red error} an error occurred while sourcing data`); // If not a GraphQL request error, let Gatsby print the error.
@@ -130,12 +136,13 @@ const createNodes = async (endpoint, query, nodeFactory, {
   verbose,
   imageArgs,
   paginationSize,
+  paginationDelay,
   languages
 }, f = async () => {}) => {
   // Message printed when fetching is complete.
   const msg = formatMsg(`fetched and processed ${endpoint} nodes`);
   if (verbose) console.time(msg);
-  await (0, _pIteration.forEach)(languages, async (locale) => await (0, _pIteration.forEach)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
+  await (0, _pIteration.forEachSeries)(languages, async (locale) => await (0, _pIteration.forEachSeries)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationDelay, paginationSize), async entity => {
     const node = await nodeFactory(imageArgs)(mapEntityIds(entity, locale));
     createNode(node);
     await f(entity, node);
@@ -199,13 +206,14 @@ const createPageNodes = async (endpoint, query, nodeFactory, {
   formatMsg,
   verbose,
   paginationSize,
+  paginationDelay,
   languages
 }, f = async () => {}) => {
   // Message printed when fetching is complete.
   const msg = formatMsg(`fetched and processed ${endpoint} nodes`);
   if (verbose) console.time(msg);
   await (0, _pIteration.forEach)(languages, async locale => {
-    await (0, _pIteration.forEach)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationSize), async entity => {
+    await (0, _pIteration.forEach)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationDelay, paginationSize), async entity => {
       const node = await nodeFactory(entity);
       createNode(nodeWithLocale(node, locale));
       await f(entity);

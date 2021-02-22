@@ -13,7 +13,6 @@ export const createClient = (shopName, accessToken, apiVersion, language = 'en')
     headers: {
       "X-Shopify-Storefront-Access-Token": accessToken,
       "Accept-Language": language,
-    },
-    timeout: 100000000
+    }
   })
 }

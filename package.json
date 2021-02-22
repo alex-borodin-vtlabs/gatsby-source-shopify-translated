@@ -1,6 +1,6 @@
 {
   "name": "gatsby-source-shopify-translated",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Shopify source plugin update to support translations API",
   "main": "index.js",
   "scripts": {

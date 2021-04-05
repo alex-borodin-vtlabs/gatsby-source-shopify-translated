@@ -2,21 +2,20 @@ import { queryOnce } from "gatsby-source-shopify/lib"
 
 import { get, getOr, last } from "lodash/fp"
 
+const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const timeout = (ms) => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+const DEFAULT_DELAY = 500
+const DEFAULT_FIRST_OBJECTS = 250
 
 export const queryAll = async (
     client,
     path,
     query,
-    delay = 500,
-    first = 250,
+    delay = DEFAULT_DELAY,
+    first = DEFAULT_FIRST_OBJECTS,
     after = null,
     aggregatedResponse = null
   ) => {
-    console.log(path)
     const data = await queryOnce(client, query, first, after)
     const edges = getOr([], [...path, `edges`], data)
     const nodes = edges.map(edge => edge.node)
@@ -27,7 +26,7 @@ export const queryAll = async (
   
     if (get([...path, `pageInfo`, `hasNextPage`], data)) {
       await timeout(delay)
-      return await queryAll(
+      return queryAll(
         client,
         path,
         query,

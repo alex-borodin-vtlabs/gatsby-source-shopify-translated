@@ -20,7 +20,7 @@ const queryAll = async (client, path, query, delay = 500, first = 250, after = n
 
   if ((0, _fp.get)([...path, `pageInfo`, `hasNextPage`], data)) {
     await timeout(delay);
-    return await queryAll(client, path, query, delay, first, (0, _fp.last)(edges).cursor, aggregatedResponse);
+    return queryAll(client, path, query, delay, first, (0, _fp.last)(edges).cursor, aggregatedResponse);
   }
 
   return aggregatedResponse;

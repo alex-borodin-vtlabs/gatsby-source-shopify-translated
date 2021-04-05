@@ -12,6 +12,7 @@ const timeout = ms => {
 };
 
 const queryAll = async (client, path, query, delay = 500, first = 250, after = null, aggregatedResponse = null) => {
+  console.log(path);
   const data = await (0, _lib.queryOnce)(client, query, first, after);
   const edges = (0, _fp.getOr)([], [...path, `edges`], data);
   const nodes = edges.map(edge => edge.node);

@@ -16,6 +16,7 @@ export const queryAll = async (
     after = null,
     aggregatedResponse = null
   ) => {
+    console.log(path)
     const data = await queryOnce(client, query, first, after)
     const edges = getOr([], [...path, `edges`], data)
     const nodes = edges.map(edge => edge.node)

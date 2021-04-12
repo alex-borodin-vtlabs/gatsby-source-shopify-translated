@@ -111,63 +111,52 @@ export const sourceNodes = async (
     // Message printed when fetching is complete.
     const msg = formatMsg(`finished fetching data from Shopify`)
 
-    let promises = []
     if (includeCollections.includes(SHOP)) {
-      promises = promises.concat([
-        createNodes(COLLECTION, queries.collections, CollectionNode, args),
-        createNodes(
-          PRODUCT,
-          queries.products,
-          ProductNode,
-          args,
-          async (product, productNode) => {
-            if (product.variants)
-              await forEach(product.variants.edges, async edge => {
-                const v = edge.node
-                if (v.metafields)
-                  await forEach(v.metafields.edges, async edge =>
-                    createNode(
-                      await ProductVariantMetafieldNode(imageArgs)(edge.node)
-                    )
+      await createNodes(COLLECTION, queries.collections, CollectionNode, args)
+      await createNodes(
+        PRODUCT,
+        queries.products,
+        ProductNode,
+        args,
+        async (product, productNode) => {
+          if (product.variants)
+            await forEach(product.variants.edges, async edge => {
+              const v = edge.node
+              if (v.metafields)
+                await forEach(v.metafields.edges, async edge =>
+                  createNode(
+                    await ProductVariantMetafieldNode(imageArgs)(edge.node)
                   )
-                return createNode(
-                  await ProductVariantNode(imageArgs, productNode)(edge.node)
                 )
-              })
-
-            if (product.metafields)
-              await forEach(product.metafields.edges, async edge =>
-                createNode(await ProductMetafieldNode(imageArgs)(edge.node))
+              return createNode(
+                await ProductVariantNode(imageArgs, productNode)(edge.node)
               )
+            })
 
-            if (product.options)
-              await forEach(product.options, async option =>
-                createNode(await ProductOptionNode(imageArgs)(option))
-              )
-          }
-        ),
-        createShopPolicies(args),
-        createShopDetails(args),
-      ])
+          if (product.metafields)
+            await forEach(product.metafields.edges, async edge =>
+              createNode(await ProductMetafieldNode(imageArgs)(edge.node))
+            )
+
+          if (product.options)
+            await forEach(product.options, async option =>
+              createNode(await ProductOptionNode(imageArgs)(option))
+            )
+        }
+      )
+      await createShopPolicies(args)
+      await createShopDetails(args)
     }
     if (includeCollections.includes(CONTENT)) {
-      promises = promises.concat([
-        createNodes(BLOG, queries.blogs, BlogNode, args),
-        createNodes(ARTICLE, queries.articles, ArticleNode, args, async x => {
-          if (x.comments)
-            await forEach(x.comments.edges, async edge =>
-              createNode(await CommentNode(imageArgs)(edge.node))
-            )
-        }),
-        createPageNodes(PAGE, queries.pages, PageNode, args),
-      ])
+      await createNodes(BLOG, queries.blogs, BlogNode, args)
+      await createNodes(ARTICLE, queries.articles, ArticleNode, args, async x => {
+        if (x.comments)
+          await forEach(x.comments.edges, async edge =>
+            createNode(await CommentNode(imageArgs)(edge.node))
+          )
+      })
+      await createPageNodes(PAGE, queries.pages, PageNode, args)
     }
-
-    console.time(msg)
-    for (const promise of promises) {
-      await promise
-    }
-    console.timeEnd(msg)
   } catch (e) {
     console.error(chalk`\n{red error} an error occurred while sourcing data`)
 
@@ -196,7 +185,7 @@ const createNodes = async (
   await forEachSeries(
     languages,
     async locale => 
-      await forEachSeries(
+      forEachSeries(
         await queryAll(
           createTranslatedClient(locale),
           [NODE_TO_ENDPOINT_MAPPING[endpoint]],
@@ -206,7 +195,7 @@ const createNodes = async (
         ),
         async entity => {
           const node = await nodeFactory(imageArgs)(mapEntityIds(entity, locale))
-          createNode(node)
+          await createNode(node)
           await f(entity, node)
         }
       )

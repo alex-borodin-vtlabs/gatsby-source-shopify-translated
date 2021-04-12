@@ -7,12 +7,12 @@ var _lib = require("gatsby-source-shopify/lib");
 
 var _fp = require("lodash/fp");
 
-const timeout = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
+const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const queryAll = async (client, path, query, delay = 500, first = 250, after = null, aggregatedResponse = null) => {
-  console.log(path);
+const DEFAULT_DELAY = 500;
+const DEFAULT_FIRST_OBJECTS = 250;
+
+const queryAll = async (client, path, query, delay = DEFAULT_DELAY, first = DEFAULT_FIRST_OBJECTS, after = null, aggregatedResponse = null) => {
   const data = await (0, _lib.queryOnce)(client, query, first, after);
   const edges = (0, _fp.getOr)([], [...path, `edges`], data);
   const nodes = edges.map(edge => edge.node);

@@ -88,10 +88,10 @@ const sourceNodes = async ({
     }; // Message printed when fetching is complete.
 
     const msg = formatMsg(`finished fetching data from Shopify`);
-    let promises = [];
 
     if (includeCollections.includes(_constants.SHOP)) {
-      promises = promises.concat([createNodes(_constants.COLLECTION, queries.collections, _nodes.CollectionNode, args), createNodes(_constants.PRODUCT, queries.products, _nodes.ProductNode, args, async (product, productNode) => {
+      await createNodes(_constants.COLLECTION, queries.collections, _nodes.CollectionNode, args);
+      await createNodes(_constants.PRODUCT, queries.products, _nodes.ProductNode, args, async (product, productNode) => {
         if (product.variants) await (0, _pIteration.forEach)(product.variants.edges, async edge => {
           const v = edge.node;
           if (v.metafields) await (0, _pIteration.forEach)(v.metafields.edges, async (edge) => createNode(await (0, _nodes.ProductVariantMetafieldNode)(imageArgs)(edge.node)));
@@ -99,22 +99,18 @@ const sourceNodes = async ({
         });
         if (product.metafields) await (0, _pIteration.forEach)(product.metafields.edges, async (edge) => createNode(await (0, _nodes.ProductMetafieldNode)(imageArgs)(edge.node)));
         if (product.options) await (0, _pIteration.forEach)(product.options, async (option) => createNode(await (0, _nodes.ProductOptionNode)(imageArgs)(option)));
-      }), createShopPolicies(args), createShopDetails(args)]);
+      });
+      await createShopPolicies(args);
+      await createShopDetails(args);
     }
 
     if (includeCollections.includes(_constants.CONTENT)) {
-      promises = promises.concat([createNodes(_constants.BLOG, queries.blogs, _nodes.BlogNode, args), createNodes(_constants.ARTICLE, queries.articles, _nodes.ArticleNode, args, async x => {
+      await createNodes(_constants.BLOG, queries.blogs, _nodes.BlogNode, args);
+      await createNodes(_constants.ARTICLE, queries.articles, _nodes.ArticleNode, args, async x => {
         if (x.comments) await (0, _pIteration.forEach)(x.comments.edges, async (edge) => createNode(await (0, _nodes.CommentNode)(imageArgs)(edge.node)));
-      }), createPageNodes(_constants.PAGE, queries.pages, _nodes.PageNode, args)]);
+      });
+      await createPageNodes(_constants.PAGE, queries.pages, _nodes.PageNode, args);
     }
-
-    console.time(msg);
-
-    for (const promise of promises) {
-      await promise;
-    }
-
-    console.timeEnd(msg);
   } catch (e) {
     console.error((0, _chalk.default)`\n{red error} an error occurred while sourcing data`); // If not a GraphQL request error, let Gatsby print the error.
 
@@ -142,9 +138,9 @@ const createNodes = async (endpoint, query, nodeFactory, {
   // Message printed when fetching is complete.
   const msg = formatMsg(`fetched and processed ${endpoint} nodes`);
   if (verbose) console.time(msg);
-  await (0, _pIteration.forEachSeries)(languages, async (locale) => await (0, _pIteration.forEachSeries)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationDelay, paginationSize), async entity => {
+  await (0, _pIteration.forEachSeries)(languages, async (locale) => (0, _pIteration.forEachSeries)(await (0, _lib2.queryAll)(createTranslatedClient(locale), [_constants.NODE_TO_ENDPOINT_MAPPING[endpoint]], query, paginationDelay, paginationSize), async entity => {
     const node = await nodeFactory(imageArgs)(mapEntityIds(entity, locale));
-    createNode(node);
+    await createNode(node);
     await f(entity, node);
   }));
   if (verbose) console.timeEnd(msg);

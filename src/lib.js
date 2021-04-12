@@ -16,7 +16,12 @@ export const queryAll = async (
     after = null,
     aggregatedResponse = null
   ) => {
-    const data = await queryOnce(client, query, first, after)
+    const t1 = new Date();
+    const data= await queryOnce(client, query, first, after)
+    const t2 = new Date();
+    const requestTime = t1.getTime() - t2.getTime();
+    console.log(path)
+    console.log(`Requested ${requestTime/1000}`)
     const edges = getOr([], [...path, `edges`], data)
     const nodes = edges.map(edge => edge.node)
   
@@ -25,8 +30,12 @@ export const queryAll = async (
       : nodes
   
     if (get([...path, `pageInfo`, `hasNextPage`], data)) {
+      const tt1 = new Date();      
       await timeout(delay)
-      return queryAll(
+      const tt2 = new Date();
+      const awaitTime = tt1.getTime() - tt2.getTime();
+      console.log(`awaited ${awaitTime/1000}`)
+      const returnData = await queryAll(
         client,
         path,
         query,
@@ -35,6 +44,7 @@ export const queryAll = async (
         last(edges).cursor,
         aggregatedResponse
       )
+      return returnData
     }
   
     return aggregatedResponse

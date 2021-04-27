@@ -61,61 +61,54 @@ const sourceNodes = async ({
 
   const formatMsg = msg => (0, _chalk.default)`\n{blue gatsby-source-shopify/${shopName}} ${msg}`;
 
-  try {
-    console.log(formatMsg(`starting to fetch data from Shopify`)); // Arguments used for file node creation.
+  console.log(formatMsg(`starting to fetch data from Shopify`)); // Arguments used for file node creation.
 
-    const imageArgs = {
-      createNode,
-      createNodeId,
-      touchNode,
-      store,
-      cache,
-      getCache,
-      reporter
-    }; // Arguments used for node creation.
+  const imageArgs = {
+    createNode,
+    createNodeId,
+    touchNode,
+    store,
+    cache,
+    getCache,
+    reporter
+  }; // Arguments used for node creation.
 
-    const args = {
-      createTranslatedClient,
-      createNode,
-      createNodeId,
-      formatMsg,
-      verbose,
-      imageArgs,
-      paginationSize,
-      paginationDelay,
-      queries,
-      languages
-    }; // Message printed when fetching is complete.
+  const args = {
+    createTranslatedClient,
+    createNode,
+    createNodeId,
+    formatMsg,
+    verbose,
+    imageArgs,
+    paginationSize,
+    paginationDelay,
+    queries,
+    languages
+  }; // Message printed when fetching is complete.
 
-    const msg = formatMsg(`finished fetching data from Shopify`);
+  const msg = formatMsg(`finished fetching data from Shopify`);
 
-    if (includeCollections.includes(_constants.SHOP)) {
-      await createNodes(_constants.COLLECTION, queries.collections, _nodes.CollectionNode, args);
-      await createNodes(_constants.PRODUCT, queries.products, _nodes.ProductNode, args, async (product, productNode) => {
-        if (product.variants) await (0, _pIteration.forEach)(product.variants.edges, async edge => {
-          const v = edge.node;
-          if (v.metafields) await (0, _pIteration.forEach)(v.metafields.edges, async (edge) => createNode(await (0, _nodes.ProductVariantMetafieldNode)(imageArgs)(edge.node)));
-          return createNode(await (0, _nodes.ProductVariantNode)(imageArgs, productNode)(edge.node));
-        });
-        if (product.metafields) await (0, _pIteration.forEach)(product.metafields.edges, async (edge) => createNode(await (0, _nodes.ProductMetafieldNode)(imageArgs)(edge.node)));
-        if (product.options) await (0, _pIteration.forEach)(product.options, async (option) => createNode(await (0, _nodes.ProductOptionNode)(imageArgs)(option)));
+  if (includeCollections.includes(_constants.SHOP)) {
+    await createNodes(_constants.COLLECTION, queries.collections, _nodes.CollectionNode, args);
+    await createNodes(_constants.PRODUCT, queries.products, _nodes.ProductNode, args, async (product, productNode) => {
+      if (product.variants) await (0, _pIteration.forEach)(product.variants.edges, async edge => {
+        const v = edge.node;
+        if (v.metafields) await (0, _pIteration.forEach)(v.metafields.edges, async (edge) => createNode(await (0, _nodes.ProductVariantMetafieldNode)(imageArgs)(edge.node)));
+        return createNode(await (0, _nodes.ProductVariantNode)(imageArgs, productNode)(edge.node));
       });
-      await createShopPolicies(args);
-      await createShopDetails(args);
-    }
+      if (product.metafields) await (0, _pIteration.forEach)(product.metafields.edges, async (edge) => createNode(await (0, _nodes.ProductMetafieldNode)(imageArgs)(edge.node)));
+      if (product.options) await (0, _pIteration.forEach)(product.options, async (option) => createNode(await (0, _nodes.ProductOptionNode)(imageArgs)(option)));
+    });
+    await createShopPolicies(args);
+    await createShopDetails(args);
+  }
 
-    if (includeCollections.includes(_constants.CONTENT)) {
-      await createNodes(_constants.BLOG, queries.blogs, _nodes.BlogNode, args);
-      await createNodes(_constants.ARTICLE, queries.articles, _nodes.ArticleNode, args, async x => {
-        if (x.comments) await (0, _pIteration.forEach)(x.comments.edges, async (edge) => createNode(await (0, _nodes.CommentNode)(imageArgs)(edge.node)));
-      });
-      await createPageNodes(_constants.PAGE, queries.pages, _nodes.PageNode, args);
-    }
-  } catch (e) {
-    console.error((0, _chalk.default)`\n{red error} an error occurred while sourcing data`); // If not a GraphQL request error, let Gatsby print the error.
-
-    if (!e.hasOwnProperty(`request`)) throw e;
-    (0, _lib.printGraphQLError)(e);
+  if (includeCollections.includes(_constants.CONTENT)) {
+    await createNodes(_constants.BLOG, queries.blogs, _nodes.BlogNode, args);
+    await createNodes(_constants.ARTICLE, queries.articles, _nodes.ArticleNode, args, async x => {
+      if (x.comments) await (0, _pIteration.forEach)(x.comments.edges, async (edge) => createNode(await (0, _nodes.CommentNode)(imageArgs)(edge.node)));
+    });
+    await createPageNodes(_constants.PAGE, queries.pages, _nodes.PageNode, args);
   }
 };
 /**

@@ -80,90 +80,81 @@ export const sourceNodes = async (
   const formatMsg = msg =>
     chalk`\n{blue gatsby-source-shopify/${shopName}} ${msg}`
 
-  try {
-    console.log(formatMsg(`starting to fetch data from Shopify`))
+  console.log(formatMsg(`starting to fetch data from Shopify`))
 
-    // Arguments used for file node creation.
-    const imageArgs = {
-      createNode,
-      createNodeId,
-      touchNode,
-      store,
-      cache,
-      getCache,
-      reporter,
-    }
+  // Arguments used for file node creation.
+  const imageArgs = {
+    createNode,
+    createNodeId,
+    touchNode,
+    store,
+    cache,
+    getCache,
+    reporter,
+  }
 
-    // Arguments used for node creation.
-    const args = {
-      createTranslatedClient,
-      createNode,
-      createNodeId,
-      formatMsg,
-      verbose,
-      imageArgs,
-      paginationSize,
-      paginationDelay,
-      queries,
-      languages,
-    }
+  // Arguments used for node creation.
+  const args = {
+    createTranslatedClient,
+    createNode,
+    createNodeId,
+    formatMsg,
+    verbose,
+    imageArgs,
+    paginationSize,
+    paginationDelay,
+    queries,
+    languages,
+  }
 
-    // Message printed when fetching is complete.
-    const msg = formatMsg(`finished fetching data from Shopify`)
+  // Message printed when fetching is complete.
+  const msg = formatMsg(`finished fetching data from Shopify`)
 
-    if (includeCollections.includes(SHOP)) {
-      await createNodes(COLLECTION, queries.collections, CollectionNode, args)
-      await createNodes(
-        PRODUCT,
-        queries.products,
-        ProductNode,
-        args,
-        async (product, productNode) => {
-          if (product.variants)
-            await forEach(product.variants.edges, async edge => {
-              const v = edge.node
-              if (v.metafields)
-                await forEach(v.metafields.edges, async edge =>
-                  createNode(
-                    await ProductVariantMetafieldNode(imageArgs)(edge.node)
-                  )
+  if (includeCollections.includes(SHOP)) {
+    await createNodes(COLLECTION, queries.collections, CollectionNode, args)
+    await createNodes(
+      PRODUCT,
+      queries.products,
+      ProductNode,
+      args,
+      async (product, productNode) => {
+        if (product.variants)
+          await forEach(product.variants.edges, async edge => {
+            const v = edge.node
+            if (v.metafields)
+              await forEach(v.metafields.edges, async edge =>
+                createNode(
+                  await ProductVariantMetafieldNode(imageArgs)(edge.node)
                 )
-              return createNode(
-                await ProductVariantNode(imageArgs, productNode)(edge.node)
               )
-            })
-
-          if (product.metafields)
-            await forEach(product.metafields.edges, async edge =>
-              createNode(await ProductMetafieldNode(imageArgs)(edge.node))
+            return createNode(
+              await ProductVariantNode(imageArgs, productNode)(edge.node)
             )
+          })
 
-          if (product.options)
-            await forEach(product.options, async option =>
-              createNode(await ProductOptionNode(imageArgs)(option))
-            )
-        }
-      )
-      await createShopPolicies(args)
-      await createShopDetails(args)
-    }
-    if (includeCollections.includes(CONTENT)) {
-      await createNodes(BLOG, queries.blogs, BlogNode, args)
-      await createNodes(ARTICLE, queries.articles, ArticleNode, args, async x => {
-        if (x.comments)
-          await forEach(x.comments.edges, async edge =>
-            createNode(await CommentNode(imageArgs)(edge.node))
+        if (product.metafields)
+          await forEach(product.metafields.edges, async edge =>
+            createNode(await ProductMetafieldNode(imageArgs)(edge.node))
           )
-      })
-      await createPageNodes(PAGE, queries.pages, PageNode, args)
-    }
-  } catch (e) {
-    console.error(chalk`\n{red error} an error occurred while sourcing data`)
 
-    // If not a GraphQL request error, let Gatsby print the error.
-    if (!e.hasOwnProperty(`request`)) throw e
-
-    printGraphQLError(e)
+        if (product.options)
+          await forEach(product.options, async option =>
+            createNode(await ProductOptionNode(imageArgs)(option))
+          )
+      }
+    )
+    await createShopPolicies(args)
+    await createShopDetails(args)
+  }
+  if (includeCollections.includes(CONTENT)) {
+    await createNodes(BLOG, queries.blogs, BlogNode, args)
+    await createNodes(ARTICLE, queries.articles, ArticleNode, args, async x => {
+      if (x.comments)
+        await forEach(x.comments.edges, async edge =>
+          createNode(await CommentNode(imageArgs)(edge.node))
+        )
+    })
+    await createPageNodes(PAGE, queries.pages, PageNode, args)
   }
 }
 
